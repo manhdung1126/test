@@ -1,4 +1,4 @@
-#ifndef GRAPHICS_H
+﻿#ifndef GRAPHICS_H
 #define GRAPHICS_H
 
 #include "init.h"
@@ -21,7 +21,8 @@ struct GameAssets {
     SDL_Texture* bgTexture = nullptr;
     SDL_Texture* shipTexture = nullptr;
     SDL_Texture* flameTexture = nullptr;
-    SDL_Texture* bulletTexture = nullptr;
+    SDL_Texture* playerBulletTexture = nullptr; // Texture cho đạn của người chơi
+    SDL_Texture* enemyBulletTexture = nullptr;  // Texture cho đạn của kẻ thù
     SDL_Texture* enemyTexture = nullptr;
     SDL_Texture* healthBarTexture = nullptr;
     SDL_Texture* healthTexture = nullptr;
@@ -54,8 +55,11 @@ inline bool loadAssets(GameAssets& assets, SDL_Renderer* renderer) {
     assets.flameTexture = loadTexture("ships/flame.gif", renderer);
     if (!assets.flameTexture) return false;
 
-    assets.bulletTexture = loadTexture("bullet.png", renderer);
-    if (!assets.bulletTexture) return false;
+    assets.playerBulletTexture = loadTexture("player_bullet.png", renderer); // Tải texture đạn người chơi
+    if (!assets.playerBulletTexture) return false;
+
+    assets.enemyBulletTexture = loadTexture("enemy_bullet.png", renderer); // Tải texture đạn kẻ thù
+    if (!assets.enemyBulletTexture) return false;
 
     assets.enemyTexture = loadTexture("ships/enemy.png", renderer);
     if (!assets.enemyTexture) return false;
@@ -82,15 +86,16 @@ inline bool loadAssets(GameAssets& assets, SDL_Renderer* renderer) {
 }
 
 inline void cleanupGraphics(GameAssets& assets) {
-    if (assets.bgTexture)      SDL_DestroyTexture(assets.bgTexture);
-    if (assets.shipTexture)    SDL_DestroyTexture(assets.shipTexture);
-    if (assets.flameTexture)   SDL_DestroyTexture(assets.flameTexture);
-    if (assets.bulletTexture)  SDL_DestroyTexture(assets.bulletTexture);
-    if (assets.enemyTexture)   SDL_DestroyTexture(assets.enemyTexture);
+    if (assets.bgTexture) SDL_DestroyTexture(assets.bgTexture);
+    if (assets.shipTexture) SDL_DestroyTexture(assets.shipTexture);
+    if (assets.flameTexture) SDL_DestroyTexture(assets.flameTexture);
+    if (assets.playerBulletTexture) SDL_DestroyTexture(assets.playerBulletTexture);
+    if (assets.enemyBulletTexture) SDL_DestroyTexture(assets.enemyBulletTexture);
+    if (assets.enemyTexture) SDL_DestroyTexture(assets.enemyTexture);
     if (assets.healthBarTexture) SDL_DestroyTexture(assets.healthBarTexture);
-    if (assets.healthTexture)  SDL_DestroyTexture(assets.healthTexture);
-    if (assets.font)           TTF_CloseFont(assets.font);
-    if (assets.titleFont)      TTF_CloseFont(assets.titleFont);
+    if (assets.healthTexture) SDL_DestroyTexture(assets.healthTexture);
+    if (assets.font) TTF_CloseFont(assets.font);
+    if (assets.titleFont) TTF_CloseFont(assets.titleFont);
 }
 
 inline void renderScreen(SDL_Renderer* renderer,
@@ -100,7 +105,8 @@ inline void renderScreen(SDL_Renderer* renderer,
     const std::vector<Enemy>& enemies,
     GameState gameState,
     int survivalTime,
-    int selectedMenuItem) {
+    int selectedMenuItem,
+    int score) {
     SDL_RenderClear(renderer);
 
     if (gameState == PLAYING) {
@@ -110,15 +116,15 @@ inline void renderScreen(SDL_Renderer* renderer,
             SDL_Rect flameRect = {
                 player.rect.x + (player.rect.w - player.rect.w / 2) / 2,
                 player.rect.y + player.rect.h / 2 + 80,
-                player.rect.w / 2,
-                player.rect.h / 4
+                player.rect.w / 1000000000000,
+                player.rect.h / 1000000000000
             };
             SDL_Point center = { flameRect.w / 2, flameRect.h / 2 };
             SDL_RenderCopyEx(renderer, assets.flameTexture, nullptr, &flameRect, player.angle, &center, SDL_FLIP_NONE);
         }
 
         for (const Bullet& bullet : bullets) {
-            bullet.render(renderer, assets.bulletTexture);
+            bullet.render(renderer, assets.playerBulletTexture, assets.enemyBulletTexture);
         }
 
         for (const Enemy& enemy : enemies) {
@@ -134,17 +140,20 @@ inline void renderScreen(SDL_Renderer* renderer,
         healthRect.w = static_cast<int>(healthBarRect.w * player.health);
         SDL_RenderCopy(renderer, assets.healthTexture, nullptr, &healthRect);
 
-        std::stringstream ss;
-        ss << "Time: " << formatTime(survivalTime);
         SDL_Color white = { 255, 255, 255, 255 };
-        SDL_Surface* textSurface = TTF_RenderText_Solid(assets.font, ss.str().c_str(), white);
-        if (textSurface) {
-            SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-            SDL_Rect textRect = { WINDOW_WIDTH - textSurface->w - 10, 10, textSurface->w, textSurface->h };
-            SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
-            SDL_DestroyTexture(textTexture);
-            SDL_FreeSurface(textSurface);
-        }
+        auto renderText = [&](const std::string& text, int x, int y) {
+            SDL_Surface* textSurface = TTF_RenderText_Solid(assets.font, text.c_str(), white);
+            if (textSurface) {
+                SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+                SDL_Rect textRect = { x, y, textSurface->w, textSurface->h };
+                SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
+                SDL_DestroyTexture(textTexture);
+                SDL_FreeSurface(textSurface);
+            }
+            };
+
+        renderText("Time: " + formatTime(survivalTime), WINDOW_WIDTH - 150, 10);
+        renderText("Score: " + std::to_string(score), 10, 10);
     }
     else if (gameState == MENU) {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 200);
@@ -153,8 +162,8 @@ inline void renderScreen(SDL_Renderer* renderer,
         SDL_RenderFillRect(renderer, &overlay);
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
-        SDL_Color white = { 255,255,255,255 };
-        SDL_Color yellow = { 255,255,0,255 };
+        SDL_Color white = { 255, 255, 255, 255 };
+        SDL_Color yellow = { 255, 255, 0, 255 };
 
         auto renderText = [&](TTF_Font* f, const std::string& text, SDL_Color color, int x, int y) {
             SDL_Surface* surf = TTF_RenderText_Solid(f, text.c_str(), color);
@@ -166,19 +175,19 @@ inline void renderScreen(SDL_Renderer* renderer,
             SDL_DestroyTexture(tex);
             };
 
-        renderText(assets.titleFont, "Space Shooter", white, (WINDOW_WIDTH - 300) / 2, 100);
-        renderText(assets.font, "Start Game", (selectedMenuItem == 0 ? yellow : white), (WINDOW_WIDTH - 200) / 2, 250);
-        renderText(assets.font, "View High Scores", (selectedMenuItem == 1 ? yellow : white), (WINDOW_WIDTH - 300) / 2, 300);
-        renderText(assets.font, "Use Arrows to Select, Enter to Confirm", white, (WINDOW_WIDTH - 400) / 2, 400);
+        renderText(assets.titleFont, "SPACE SHOOTER", white, (WINDOW_WIDTH - 375) / 2, 100);
+        renderText(assets.font, "Start Game", (selectedMenuItem == 0 ? yellow : white), (WINDOW_WIDTH - 100) / 2, 250);
+        renderText(assets.font, "View High Scores", (selectedMenuItem == 1 ? yellow : white), (WINDOW_WIDTH - 170) / 2, 300);
+        renderText(assets.font, "Use Arrows to Select, Enter to Confirm", white, (WINDOW_WIDTH - 400) / 2, 390);
     }
     else if (gameState == GAME_OVER) {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 200);
-        SDL_Rect overlay = { 0,0,WINDOW_WIDTH,WINDOW_HEIGHT };
+        SDL_Rect overlay = { 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT };
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
         SDL_RenderFillRect(renderer, &overlay);
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
-        SDL_Color white = { 255,255,255,255 };
+        SDL_Color white = { 255, 255, 255, 255 };
         auto renderText = [&](TTF_Font* f, const std::string& text, int x, int y) {
             SDL_Surface* surf = TTF_RenderText_Solid(f, text.c_str(), white);
             if (!surf) return;
@@ -189,26 +198,27 @@ inline void renderScreen(SDL_Renderer* renderer,
             SDL_DestroyTexture(tex);
             };
 
-        renderText(assets.titleFont, "Game Over", (WINDOW_WIDTH - 300) / 2, 100);
-        renderText(assets.font, "Survival Time: " + formatTime(survivalTime), (WINDOW_WIDTH - 400) / 2, 180);
+        renderText(assets.titleFont, "GAME OVER", (WINDOW_WIDTH - 285) / 2, 100);
+        renderText(assets.font, "Score: " + std::to_string(score), (WINDOW_WIDTH - 100) / 2, 180);
+        renderText(assets.font, "Survival Time: " + formatTime(survivalTime), (WINDOW_WIDTH - 200) / 2, 220);
 
         auto scores = loadScores();
         for (size_t i = 0; i < scores.size(); ++i) {
-            renderText(assets.font, "Top " + std::to_string(i + 1) + ": " + formatTime(scores[i]), (WINDOW_WIDTH - 300) / 2, 260 + i * 40);
+            renderText(assets.font, "Top " + std::to_string(i + 1) + ": " + formatTime(scores[i]), (WINDOW_WIDTH - 110) / 2, 260 + i * 40);
         }
 
         if ((SDL_GetTicks() % 1000) < 500) {
-            renderText(assets.font, "Press R to Return to Menu", (WINDOW_WIDTH - 400) / 2, 460);
+            renderText(assets.font, "Press R to Return to Menu", (WINDOW_WIDTH - 265) / 2, 460);
         }
     }
     else if (gameState == VIEW_SCORES) {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 200);
-        SDL_Rect overlay = { 0,0,WINDOW_WIDTH,WINDOW_HEIGHT };
+        SDL_Rect overlay = { 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT };
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
         SDL_RenderFillRect(renderer, &overlay);
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
-        SDL_Color white = { 255,255,255,255 };
+        SDL_Color white = { 255, 255, 255, 255 };
         auto renderText = [&](TTF_Font* f, const std::string& text, int x, int y) {
             SDL_Surface* surf = TTF_RenderText_Solid(f, text.c_str(), white);
             if (!surf) return;
@@ -219,12 +229,12 @@ inline void renderScreen(SDL_Renderer* renderer,
             SDL_DestroyTexture(tex);
             };
 
-        renderText(assets.titleFont, "High Scores", (WINDOW_WIDTH - 300) / 2, 100);
+        renderText(assets.titleFont, "High Scores", (WINDOW_WIDTH - 250) / 2, 100);
         auto scores = loadScores();
         for (size_t i = 0; i < scores.size(); ++i) {
-            renderText(assets.font, "Top " + std::to_string(i + 1) + ": " + formatTime(scores[i]), (WINDOW_WIDTH - 300) / 2, 200 + i * 40);
+            renderText(assets.font, "Top " + std::to_string(i + 1) + ": " + formatTime(scores[i]), (WINDOW_WIDTH - 110) / 2, 200 + i * 40);
         }
-        renderText(assets.font, "Press Enter to Return", (WINDOW_WIDTH - 400) / 2, 400);
+        renderText(assets.font, "Press Enter to Return", (WINDOW_WIDTH - 210) / 2, 400);
     }
 
     SDL_RenderPresent(renderer);

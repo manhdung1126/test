@@ -26,8 +26,10 @@ struct Bullet {
         rect.y = static_cast<int>(posY);
     }
 
-    void render(SDL_Renderer* renderer, SDL_Texture* bulletTexture) const {
+    void render(SDL_Renderer* renderer, SDL_Texture* playerBulletTexture, SDL_Texture* enemyBulletTexture) const {
         if (!active) return;
+
+        SDL_Texture* bulletTexture = isEnemy ? enemyBulletTexture : playerBulletTexture;
 
         for (int i = 0; i < 5; i++) {
             SDL_Rect trailRect = rect;

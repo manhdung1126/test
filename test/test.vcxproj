@@ -104,13 +104,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\Dowload\SDL2-devel-2.28.5-VC %281%29\SDL2-2.28.5\include;D:\Dowload\sdl2\SDL2_ttf-devel-2.24.0-VC\SDL2_ttf-2.24.0\include;D:\Dowload\sdl2\SDL2_mixer-devel-2.8.1-VC\SDL2_mixer-2.8.1\include;D:\Dowload\sdl2\SDL2_image-devel-2.8.5-VC\SDL2_image-2.8.5\include;D:\Dowload\sdl2\SDL2-devel-2.28.5-VC\SDL2-2.28.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Dowload\SDL2-devel-2.28.5-VC\SDL2-2.28.5\include;D:\Dowload\SDL2_ttf-devel-2.24.0-VC\SDL2_ttf-2.24.0\include;D:\Dowload\SDL2_mixer-devel-2.8.1-VC\SDL2_mixer-2.8.1\include;D:\Dowload\SDL2_image-devel-2.8.5-VC\SDL2_image-2.8.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>SDL2.lib;SDL2test.lib;SDL2main.lib;SDL2_image.lib;SDL2_mixer.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>D:\Dowload\SDL2-devel-2.28.5-VC %281%29\SDL2-2.28.5\lib;D:\Dowload\sdl2\SDL2_ttf-devel-2.24.0-VC\SDL2_ttf-2.24.0\lib;D:\Dowload\sdl2\SDL2_mixer-devel-2.8.1-VC\SDL2_mixer-2.8.1\lib;D:\Dowload\sdl2\SDL2_image-devel-2.8.5-VC\SDL2_image-2.8.5\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\Dowload\SDL2_ttf-devel-2.24.0-VC\SDL2_ttf-2.24.0\lib\x64;D:\Dowload\SDL2_mixer-devel-2.8.1-VC\SDL2_mixer-2.8.1\lib\x64;D:\Dowload\SDL2_image-devel-2.8.5-VC\SDL2_image-2.8.5\lib\x64;D:\Dowload\SDL2-devel-2.28.5-VC\SDL2-2.28.5\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -121,7 +121,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\Dowload\SDL2-devel-2.28.5-VC %281%29\SDL2-2.28.5\include;D:\Dowload\sdl2\SDL2_ttf-devel-2.24.0-VC\SDL2_ttf-2.24.0\include;D:\Dowload\sdl2\SDL2_mixer-devel-2.8.1-VC\SDL2_mixer-2.8.1\include;D:\Dowload\sdl2\SDL2_image-devel-2.8.5-VC\SDL2_image-2.8.5\include;D:\Dowload\sdl2\SDL2-devel-2.28.5-VC\SDL2-2.28.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Dowload\SDL2-devel-2.28.5-VC\SDL2-2.28.5\include;D:\Dowload\SDL2_ttf-devel-2.24.0-VC\SDL2_ttf-2.24.0\include;D:\Dowload\SDL2_mixer-devel-2.8.1-VC\SDL2_mixer-2.8.1\include;D:\Dowload\SDL2_image-devel-2.8.5-VC\SDL2_image-2.8.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -129,7 +129,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>SDL2.lib;SDL2test.lib;SDL2main.lib;SDL2_image.lib;SDL2_mixer.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>D:\Dowload\SDL2-devel-2.28.5-VC %281%29\SDL2-2.28.5\lib;D:\Dowload\sdl2\SDL2_ttf-devel-2.24.0-VC\SDL2_ttf-2.24.0\lib;D:\Dowload\sdl2\SDL2_mixer-devel-2.8.1-VC\SDL2_mixer-2.8.1\lib;D:\Dowload\sdl2\SDL2_image-devel-2.8.5-VC\SDL2_image-2.8.5\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\Dowload\SDL2_ttf-devel-2.24.0-VC\SDL2_ttf-2.24.0\lib\x64;D:\Dowload\SDL2_mixer-devel-2.8.1-VC\SDL2_mixer-2.8.1\lib\x64;D:\Dowload\SDL2_image-devel-2.8.5-VC\SDL2_image-2.8.5\lib\x64;D:\Dowload\SDL2-devel-2.28.5-VC\SDL2-2.28.5\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

@@ -1,4 +1,4 @@
-#include "init.h"
+﻿#include "init.h"
 #include "event.h"
 #include "graphics.h"
 #include "bullet.h"
@@ -11,10 +11,14 @@
 #include <sstream>
 #include <iomanip>
 
-int survivalTime = 0;
-int selectedMenuItem = 0;
-Uint32 lastSpawnTime = 0;
-const Uint32 SPAWN_INTERVAL = 3000;
+struct GameData {
+    int survivalTime = 0;
+    int score = 0;
+    int selectedMenuItem = 0;
+    Uint32 lastSpawnTime = 0;
+    Uint32 gameStartTime = 0; // Thêm để theo dõi thời điểm bắt đầu game
+    const Uint32 SPAWN_INTERVAL = 3000;
+};
 
 bool intersectBullet(float bulletX, float bulletY, float shipX, float shipY, float shipSize) {
     float dx = bulletX - shipX;
@@ -66,7 +70,7 @@ void spawnEnemy(std::vector<Enemy>& enemies, std::mt19937& gen,
 }
 
 void resetGame(Player& player, std::vector<Bullet>& bullets, std::vector<Enemy>& enemies,
-    Uint32& lastSpawnTime, int& survivalTime, std::mt19937& gen,
+    GameData& gameData, std::mt19937& gen,
     std::uniform_real_distribution<float>& posDistX,
     std::uniform_real_distribution<float>& posDistY,
     std::uniform_real_distribution<float>& speedDist,
@@ -76,8 +80,10 @@ void resetGame(Player& player, std::vector<Bullet>& bullets, std::vector<Enemy>&
     bullets.clear();
     enemies.clear();
     enemies.emplace_back(posDistX(gen), posDistY(gen), speedDist(gen), radiusDist(gen), orbitSpeedDist(gen));
-    lastSpawnTime = 0;
-    survivalTime = 0;
+    gameData.lastSpawnTime = 0;
+    gameData.survivalTime = 0;
+    gameData.score = 0;
+    gameData.gameStartTime = SDL_GetTicks(); // Reset thời điểm bắt đầu game
 }
 
 int main(int argc, char* argv[]) {
@@ -95,7 +101,7 @@ int main(int argc, char* argv[]) {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<float> speedDist(150.0f, 300.0f);
-    std::uniform_real_distribution<float> radiusDist(100.0f, 200.0f);
+    std::uniform_real_distribution<float> radiusDist(200.0f, 400.0f);
     std::uniform_real_distribution<float> orbitSpeedDist(0.01f, 0.05f);
     std::uniform_real_distribution<float> posDistX(0.0f, WINDOW_WIDTH);
     std::uniform_real_distribution<float> posDistY(0.0f, WINDOW_HEIGHT);
@@ -104,6 +110,7 @@ int main(int argc, char* argv[]) {
     std::vector<Bullet> bullets;
     std::vector<Enemy> enemies;
     GameState gameState = MENU;
+    GameData gameData;
     bool running = true;
     Uint32 lastTime = SDL_GetTicks();
     const int FPS = 60;
@@ -118,15 +125,14 @@ int main(int argc, char* argv[]) {
             if (event.type == SDL_KEYDOWN) {
                 if (gameState == MENU) {
                     if (event.key.keysym.sym == SDLK_UP) {
-                        selectedMenuItem = (selectedMenuItem == 0) ? 1 : 0;
+                        gameData.selectedMenuItem = (gameData.selectedMenuItem == 0) ? 1 : 0;
                     }
                     if (event.key.keysym.sym == SDLK_DOWN) {
-                        selectedMenuItem = (selectedMenuItem == 0) ? 1 : 0;
+                        gameData.selectedMenuItem = (gameData.selectedMenuItem == 0) ? 1 : 0;
                     }
                     if (event.key.keysym.sym == SDLK_RETURN) {
-                        if (selectedMenuItem == 0) {
-                            resetGame(player, bullets, enemies, lastSpawnTime, survivalTime, gen,
-                                posDistX, posDistY, speedDist, radiusDist, orbitSpeedDist);
+                        if (gameData.selectedMenuItem == 0) {
+                            resetGame(player, bullets, enemies, gameData, gen, posDistX, posDistY, speedDist, radiusDist, orbitSpeedDist);
                             gameState = PLAYING;
                         }
                         else {
@@ -137,7 +143,8 @@ int main(int argc, char* argv[]) {
                 else if (gameState == GAME_OVER) {
                     if (event.key.keysym.sym == SDLK_r) {
                         gameState = MENU;
-                        selectedMenuItem = 0;
+                        gameData.selectedMenuItem = 0;
+                        resetGame(player, bullets, enemies, gameData, gen, posDistX, posDistY, speedDist, radiusDist, orbitSpeedDist);
                     }
                 }
                 else if (gameState == VIEW_SCORES) {
@@ -152,17 +159,17 @@ int main(int argc, char* argv[]) {
         }
 
         Uint32 currentTime = SDL_GetTicks();
-        float deltaTime = (currentTime - lastTime) / 1000.0f;
+        float deltaTime = std::min((currentTime - lastTime) / 1000.0f, 0.033f);
         lastTime = currentTime;
 
         if (gameState == PLAYING) {
-            survivalTime = currentTime / 1000;
+            gameData.survivalTime = (currentTime - gameData.gameStartTime) / 1000; // Tính thời gian từ gameStartTime
 
             updatePlayer(player, deltaTime, WINDOW_WIDTH, WINDOW_HEIGHT, bullets);
 
-            if (currentTime - lastSpawnTime >= SPAWN_INTERVAL) {
+            if (currentTime - gameData.lastSpawnTime >= gameData.SPAWN_INTERVAL) {
                 spawnEnemy(enemies, gen, posDistX, posDistY, speedDist, radiusDist, orbitSpeedDist);
-                lastSpawnTime = currentTime;
+                gameData.lastSpawnTime = currentTime;
             }
 
             for (Enemy& enemy : enemies) {
@@ -173,12 +180,12 @@ int main(int argc, char* argv[]) {
                 bullet.update(deltaTime);
             }
 
-            for (size_t i = 0; i < bullets.size(); i++) {
+            for (size_t i = 0; i < bullets.size();) {
+                bool bulletRemoved = false;
                 float dist = std::sqrt(std::pow(bullets[i].posX - (player.posX + player.rect.w / 2), 2) +
                     std::pow(bullets[i].posY - (player.posY + player.rect.h / 2), 2));
                 if (dist > 2000) {
                     bullets.erase(bullets.begin() + i);
-                    i--;
                     continue;
                 }
 
@@ -188,9 +195,10 @@ int main(int argc, char* argv[]) {
                             enemies[e].life -= 0.1f;
                             if (enemies[e].life <= 0) {
                                 enemies.erase(enemies.begin() + e);
+                                gameData.score += 100;
                             }
                             bullets.erase(bullets.begin() + i);
-                            i--;
+                            bulletRemoved = true;
                             break;
                         }
                     }
@@ -199,9 +207,10 @@ int main(int argc, char* argv[]) {
                     if (intersectBullet(bullets[i].posX, bullets[i].posY, player.posX + player.rect.w / 2, player.posY + player.rect.h / 2, 64.0f)) {
                         player.health -= 0.1f;
                         bullets.erase(bullets.begin() + i);
-                        i--;
+                        bulletRemoved = true;
                     }
                 }
+                if (!bulletRemoved) ++i;
             }
 
             player.health += deltaTime * 0.05f;
@@ -209,7 +218,7 @@ int main(int argc, char* argv[]) {
             if (player.health < 0.0f) player.health = 0.0f;
 
             if (player.health <= 0) {
-                saveScore(survivalTime);
+                saveScore(gameData.score);
                 gameState = GAME_OVER;
             }
 
@@ -225,7 +234,7 @@ int main(int argc, char* argv[]) {
             updateRotation(player, mouseX, mouseY);
         }
 
-        renderScreen(renderer, assets, player, bullets, enemies, gameState, survivalTime, selectedMenuItem);
+        renderScreen(renderer, assets, player, bullets, enemies, gameState, gameData.survivalTime, gameData.selectedMenuItem, gameData.score);
 
         Uint32 frameEnd = SDL_GetTicks();
         float frameDuration = frameEnd - currentTime;

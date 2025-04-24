@@ -8,24 +8,56 @@
 
 constexpr float ENEMY_SHIP_SIZE = 64.0f;
 
+enum EnemyType {
+    BASIC,
+    FAST,
+    TANK
+};
+
 struct Enemy {
     float posX, posY;
     float dirX, dirY;
     float speed;
-    float turnSpeed = 3.0f;
+    float turnSpeed;
     float fireTimer = 0.0f;
-    float fireTimeReset = 0.5f;
-    float fireRange = 0.9f;  // Đã sửa từ 1.5f thành 0.9f
-    float bulletSpeed = 500.0f;
-    float life = 1.0f;
+    float fireTimeReset;
+    float fireRange;
+    float bulletSpeed;
+    float life;
     SDL_Rect rect;
     float orbitRadius;
     float orbitSpeed;
     float angle = 0.0f;
+    EnemyType type;
 
-    Enemy(float x, float y, float spd, float radius, float orbitSpd)
-        : posX(x), posY(y), dirX(1.0f), dirY(0.0f), speed(spd), orbitRadius(radius), orbitSpeed(orbitSpd) {
+    Enemy(float x, float y, float spd, float radius, float orbitSpd, EnemyType enemyType = BASIC)
+        : posX(x), posY(y), dirX(1.0f), dirY(0.0f), speed(spd), orbitRadius(radius), orbitSpeed(orbitSpd), type(enemyType) {
         rect = { static_cast<int>(posX), static_cast<int>(posY), 64, 64 };
+        switch (type) {
+        case BASIC:
+            turnSpeed = 3.0f;
+            fireTimeReset = 0.5f;
+            fireRange = 0.9f;
+            bulletSpeed = 500.0f;
+            life = 1.0f;
+            break;
+        case FAST:
+            turnSpeed = 5.0f;
+            fireTimeReset = 0.3f;
+            fireRange = 0.8f;
+            bulletSpeed = 600.0f;
+            life = 0.5f;
+            speed *= 1.5f;
+            break;
+        case TANK:
+            turnSpeed = 2.0f;
+            fireTimeReset = 1.0f;
+            fireRange = 0.95f;
+            bulletSpeed = 400.0f;
+            life = 2.0f;
+            speed *= 0.7f;
+            break;
+        }
     }
 
     bool update(float deltaTime, float playerX, float playerY, std::vector<Bullet>& bullets) {
